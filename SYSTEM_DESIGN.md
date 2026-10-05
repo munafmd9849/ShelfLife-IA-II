@@ -18,6 +18,8 @@ flowchart TD
   API2 --> Mongo
   APIN --> Mongo
   API1 --> Queue[Asynchronous queue]
+  API2 --> Queue
+  APIN --> Queue
   Queue --> Worker[Background workers]
 ```
 
@@ -43,3 +45,9 @@ Use an atomic conditional update: match the book ID (and `libraryId`) plus `avai
 ## E. Semester traffic at 10× normal volume
 
 Scale API instances horizontally behind the load balancer and use autoscaling based on request rate, latency and CPU. Redis absorbs repeated catalogue reads, and background jobs are queued rather than performed in HTTP requests. Database capacity should be monitored and increased before the peak, with read replicas/sharding introduced based on observed bottlenecks. After the semester surge, scale down API and worker capacity instead of permanently provisioning for peak load.
+
+## Exam Requirement Matrix
+
+- **Q1 Backend:** [x] schemas, validation, references, REST endpoints, pagination, genre filtering, middleware, JWT, protected routes, concurrency explanation and API documentation.
+- **Q2 Frontend:** [x] TypeScript types, typed API client, catalogue search/filtering, loading and error states, issue form, member history, overdue display, `DataTable<T>`, protected routes and local React state.
+- **Q3 System Design:** [x] architecture diagram, component roles, MongoDB scaling and shard-key trade-offs, Redis caching and invalidation, atomic issuing, asynchronous queue, and semester-traffic scaling rationale.

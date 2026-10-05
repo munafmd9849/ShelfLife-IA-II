@@ -10,7 +10,8 @@ import borrowRoutes from './routes/borrowRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 
 const app = express();
-app.use(cors());
+const allowedOrigins = process.env.CLIENT_ORIGIN?.split(',').map((origin) => origin.trim()).filter(Boolean);
+app.use(cors(allowedOrigins?.length ? { origin: allowedOrigins } : {}));
 app.use(express.json());
 app.use(logger);
 app.get('/api/health', (req, res) => res.json({ success: true, message: 'ShelfLife API is running' }));

@@ -21,12 +21,16 @@ export async function issueBook(req, res) {
 }
 
 export async function returnBook(req, res) {
-  const record = await BorrowRecord.findById(req.params.borrowId);
-  if (!record) return res.status(404).json({ success: false, message: 'Borrow record not found' });
-  if (record.returnDate) return res.status(409).json({ success: false, message: 'This book has already been returned' });
-  record.returnDate = new Date();
-  record.status = 'returned';
-  await record.save();
+  const record = await BorrowRecord.findOneAndUpdate(
+    { _id: req.params.borrowId, returnDate: null },
+    { $set: { returnDate: new Date(), status: 'returned' } },
+    { new: true }
+  );
+  if (!record) {
+    const existingRecord = await BorrowRecord.findById(req.params.borrowId);
+    if (!existingRecord) return res.status(404).json({ success: false, message: 'Borrow record not found' });
+    return res.status(409).json({ success: false, message: 'This book has already been returned' });
+  }
   await Book.findByIdAndUpdate(record.book, { $inc: { availableCopies: 1 } });
   res.json({ success: true, message: 'Book returned successfully', data: record });
 }
