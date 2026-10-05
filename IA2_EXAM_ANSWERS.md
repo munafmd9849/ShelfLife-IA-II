@@ -1,81 +1,18 @@
-# ShelfLife — Full Stack College Library Management System
-## Internal Assessment 2 (IA-II) — Comprehensive Examination & Project Documentation
+# ShelfLife — IA-II Full Stack Web Development
+## Comprehensive Examination Answers & System Design Documentation
 
 * **Course:** Full Stack Web Development (IA-II)
 * **Duration:** 3 Hours | **Max Marks:** 50
 * **Student Name:** __________________________________
 * **Roll No.:** ________________________________________
-* **Live Web App (Vercel):** [https://shelf-life-ia-ii.vercel.app](https://shelf-life-ia-ii.vercel.app)
-* **Live API Backend (Render):** [https://shelflife-ia-ii-backend.onrender.com](https://shelflife-ia-ii-backend.onrender.com)
-* **Database:** MongoDB Atlas (Cluster0 — `shelflife`)
+* **Date:** October 5, 2026
+* **Application:** **ShelfLife — College Library Management System**
+* **Live Backend:** `https://shelflife-ia-ii-backend.onrender.com`
+* **Live Frontend:** `https://shelf-life-ia-ii.vercel.app`
 
 ---
 
-## Quick Navigation
-
-* [Live Credentials & Setup](#live-credentials--quick-setup)
-* [Marks Distribution](#marks-distribution)
-* [Section A — Backend Development (Q1) [20 Marks]](#section-a--backend-development-20-marks)
-  * [Q1.a) Mongoose Schemas & Validations](#q1a-mongoose-schemas-design-entities-validation-references)
-  * [Q1.b) Express RESTful Endpoints](#q1b-restful-endpoints-implementation)
-  * [Q1.c) Middleware Architecture](#q1c-middleware-architecture)
-  * [Q1.d) Authentication & Authorization Layer](#q1d-authentication--authorization-layer)
-  * [Q1.e) Race Condition Prevention (Concurrency Defense)](#q1e-race-condition-prevention-concurrency-defense)
-  * [Sample cURL API Requests](#sample-curl-api-requests)
-* [Section B — Frontend Development (Q2) [20 Marks]](#section-b--frontend-development-react--typescript-20-marks)
-  * [Q2.a) TypeScript Interfaces & Centralized API Client](#q2a-typescript-models--centralized-api-client)
-  * [Q2.b) Book List Catalogue with Search & Filter](#q2b-book-list-catalogue-page-frontendsrcpagesbookstsx)
-  * [Q2.c) Issue Book Form with In-Flight Prevention](#q2c-issue-book-form-frontendsrcpagesissuebooktsx)
-  * [Q2.d) Member Borrowing History & Overdue Badge](#q2d-member-borrowing-history-page-frontendsrcpagesmemberhistorytsx)
-  * [Q2.e) Generic Reusable Component `<DataTable<T>>`](#q2e-reusable-generic-component-frontendsrccomponentsdatatabletsx)
-  * [Q2.f) Client-Side Route Protection](#q2f-client-side-route-protection-frontendsrccomponentsprotectedroutettsx)
-  * [State Management Architecture Justification](#state-management-architecture-justification)
-* [Section C — System Design (Q3) [10 Marks]](#section-c--system-design-scale-to-500-libraries--2m-members-10-marks)
-  * [Q3.a) High-Level Architecture Diagram & Component Roles](#q3a-high-level-architecture-diagram--component-roles)
-  * [Q3.b) MongoDB Sharding Strategy & Shard Keys](#q3b-mongodb-sharding-strategy--shard-keys)
-  * [Q3.c) Read-Heavy Caching Strategy](#q3c-read-heavy-caching-strategy)
-  * [Q3.d) Guaranteeing Non-Negative Available Copies](#q3d-guaranteeing-non-negative-available-copies-under-concurrency)
-  * [Q3.e) Handling 10× Semester Traffic Spikes Cost-Effectively](#q3e-handling-10-semester-traffic-spikes-cost-effectively)
-* [Automated Test Suite & Concurrency Verification Proof](#automated-test-suite--concurrency-verification-proof)
-
----
-
-## Live Credentials & Quick Setup
-
-### Librarian Credentials
-* **Email:** `librarian@shelflife.com`
-* **Password:** `librarian123`
-* **Role:** `librarian` (returns 8-hour signed JWT)
-
-### Demo Member for Testing
-* **Member ID:** `MEM-2026-101` (Sarah Connor) — demonstrates active loans, overdue badge, and return book action.
-* **Member ID:** `MEM-2026-102` (Alex Johnson) — demonstrates out-of-stock book behavior.
-
----
-
-### Local Installation & Running
-
-```bash
-# 1. Clone repository
-git clone https://github.com/munafmd9849/ShelfLife-IA-II.git
-cd ShelfLife-IA-II
-
-# 2. Run Backend
-cd backend
-npm install
-cp .env.example .env
-npm run dev
-
-# 3. Run Frontend (in a separate terminal)
-cd ../frontend
-npm install
-cp .env.example .env
-npm run dev
-```
-
----
-
-## Marks Distribution
+# Marks Distribution Summary
 
 | Section | Topic | Marks |
 | :--- | :--- | :---: |
@@ -86,7 +23,7 @@ npm run dev
 
 ---
 
-# Section A — Backend Development (20 Marks)
+# Section A — Backend Development (Node.js, Express.js, MongoDB) [20 Marks]
 
 ---
 
@@ -96,7 +33,7 @@ The system models three core entities in MongoDB using Mongoose v8.
 
 #### 1. Book Schema (`backend/src/models/Book.js`)
 * **Attributes:** `title`, `author`, `isbn`, `genre`, `totalCopies`, `availableCopies`
-* **Constraints & Validations:** `isbn` is strictly unique and trimmed. `totalCopies` and `availableCopies` enforce non-negative values (`min: 0`). Timestamps (`createdAt`, `updatedAt`) are automatically generated.
+* **Constraints:** `isbn` is unique and trimmed. `totalCopies` and `availableCopies` enforce non-negative values (`min: 0`). Timestamps (`createdAt`, `updatedAt`) are automatically tracked.
 
 ```javascript
 import mongoose from 'mongoose';
@@ -115,7 +52,7 @@ export default mongoose.model('Book', bookSchema);
 
 #### 2. Member Schema (`backend/src/models/Member.js`)
 * **Attributes:** `name`, `email`, `membershipId`, `joinedDate`
-* **Constraints & Validations:** `email` is lowercase, trimmed, and unique. `membershipId` is unique and trimmed. `joinedDate` defaults to `Date.now`.
+* **Constraints:** `email` is lowercase, trimmed, and strictly unique. `membershipId` is strictly unique. `joinedDate` defaults to `Date.now`.
 
 ```javascript
 import mongoose from 'mongoose';
@@ -162,7 +99,7 @@ export async function createBook(req, res) {
 }
 ```
 
-#### 2. `GET /api/books` — List books with pagination & genre/title filtering
+#### 2. `GET /api/books` — List, search, filter, and paginate books
 * Supports `page` (default 1), `limit` (default 10, capped at 100), case-insensitive regex `search` by title, and exact case-insensitive regex `genre` filtering.
 ```javascript
 export async function getBooks(req, res) {
@@ -277,8 +214,10 @@ export async function getMemberHistory(req, res) {
    * Handles MongoDB duplicate key errors (`code: 11000`) and returns `409 Conflict`.
    * Handles Mongoose `ValidationError` and returns `400 Bad Request`.
    * Fallback returns `500 Internal Server Error`.
+
 2. **Request Logging (`backend/src/middleware/logger.js`):**
    * Custom middleware tracking HTTP Method, URL, Status Code, and Execution Duration in milliseconds (`res.on('finish')`).
+
 3. **Input Validation (`backend/src/middleware/validate.js`):**
    * `requireFields(fields)`: Checks that all mandatory body keys are present and not empty.
    * `validateBook`: Ensures `totalCopies` and `availableCopies` are non-negative integers and `availableCopies <= totalCopies`.
@@ -291,6 +230,7 @@ export async function getMemberHistory(req, res) {
 1. **Login Route (`POST /api/auth/login`):**
    * Verifies librarian credentials (`librarian@shelflife.com` / `librarian123`) using `bcrypt.compare`.
    * Issues a signed JSON Web Token (JWT) with an 8-hour expiry containing `{ email, role: 'librarian' }`.
+
 2. **JWT Authentication Middleware (`backend/src/middleware/auth.js`):**
    * Extracts token from `Authorization: Bearer <token>` header.
    * Verifies the token using `jwt.verify(token, process.env.JWT_SECRET)`.
@@ -300,7 +240,7 @@ export async function getMemberHistory(req, res) {
 
 ---
 
-### Q1.e) Race Condition Prevention (Concurrency Defense)
+### Q1.e) Race Condition Prevention (The Concurrency Guarantee)
 
 > **Explanation of Concurrency Defense:**  
 > When two librarians issue the final physical copy of a book (`availableCopies = 1`) simultaneously, ShelfLife prevents negative inventory using MongoDB's single-document atomic update:  
@@ -309,51 +249,11 @@ export async function getMemberHistory(req, res) {
 
 ---
 
-### Sample cURL API Requests
-
-```bash
-# 1. Health check
-curl https://shelflife-ia-ii-backend.onrender.com/api/health
-
-# 2. Librarian Login (Receive JWT)
-curl -X POST https://shelflife-ia-ii-backend.onrender.com/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"librarian@shelflife.com","password":"librarian123"}'
-
-# 3. Create Book
-curl -X POST https://shelflife-ia-ii-backend.onrender.com/api/books \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Clean Code","author":"Robert C. Martin","isbn":"9780132350884","genre":"Technology","totalCopies":5,"availableCopies":5}'
-
-# 4. Search and Paginate Books
-curl "https://shelflife-ia-ii-backend.onrender.com/api/books?page=1&limit=10&genre=Technology&search=Clean"
-
-# 5. Register Member
-curl -X POST https://shelflife-ia-ii-backend.onrender.com/api/members \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Sarah Connor","email":"sarah@cyberdyne.org","membershipId":"MEM-2026-101"}'
-
-# 6. Issue Book (Protected - Requires JWT)
-curl -X POST https://shelflife-ia-ii-backend.onrender.com/api/borrow \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <YOUR_JWT_TOKEN>" \
-  -d '{"bookId":"<BOOK_OBJECT_ID>","memberId":"<MEMBER_OBJECT_ID>","dueDate":"2026-11-01"}'
-
-# 7. Return Book (Protected - Requires JWT)
-curl -X POST https://shelflife-ia-ii-backend.onrender.com/api/return/<BORROW_RECORD_ID> \
-  -H "Authorization: Bearer <YOUR_JWT_TOKEN>"
-
-# 8. Get Member History
-curl https://shelflife-ia-ii-backend.onrender.com/api/members/<MEMBER_OBJECT_ID>/history
-```
+# Section B — Frontend Development (React with TypeScript) [20 Marks]
 
 ---
 
-# Section B — Frontend Development (React + TypeScript) [20 Marks]
-
----
-
-### Q2.a) TypeScript Models & Centralized API Client
+### Q2.a) TypeScript Models and Centralized API Client
 
 #### Domain Interfaces (`frontend/src/types/index.ts`)
 ```typescript
@@ -401,7 +301,7 @@ export interface PaginatedResponse<T> {
 
 ---
 
-### Q2.b) Book List Catalogue Page (`frontend/src/pages/Books.tsx`)
+### Q2.b) Book List Page (`frontend/src/pages/Books.tsx`)
 * **Features:**
   * Displays catalogue volumes using `<DataTable<Book>>`.
   * **250ms Debounced Title Search:** Prevents spamming the database on every keystroke.
@@ -421,7 +321,7 @@ export interface PaginatedResponse<T> {
 
 ---
 
-### Q2.d) Member Borrowing History Page (`frontend/src/pages/MemberHistory.tsx`)
+### Q2.d) Member History Page (`frontend/src/pages/MemberHistory.tsx`)
 * **Features:**
   * Detailed Member Information Card displaying name, email, avatar, membership ID, and join date.
   * Complete circulation history rendered via `<DataTable<BorrowRecord>>`.
@@ -496,7 +396,7 @@ export default function DataTable<T extends { _id: string }>({
 
 ---
 
-### State Management Architecture Justification
+### Q2 Deliverable Note: State Management Choice
 > **State Management Rationale:**  
 > ShelfLife deliberately uses **React Local State (`useState` & `useEffect`)** combined with **Axios Interceptors** rather than Redux, Zustand, or MobX.  
 > 1. **Data Freshness:** Library circulation requires real-time, authoritative data from the database (e.g. available copy counts and overdue statuses change dynamically on the server). Local state ensures each view fetches fresh data on navigation rather than holding stale global cache.  
@@ -638,22 +538,4 @@ To handle the surge during the first week of every semester without paying for i
    Pre-schedule temporary vertical scaling for the primary database shards 48 hours before the semester start date using Cloud Automation (e.g. AWS Auto Scaling / MongoDB Atlas Auto-Scale), and scale down once enrollment week ends.
 
 ---
-
-## Automated Test Suite & Concurrency Verification Proof
-
-The ShelfLife test harness (`scratch/run_all_tests.js`) was executed against the live Atlas MongoDB database (`shelflife`).
-
-### Test Execution Summary
-* **Total Automated Tests:** 38
-* **Passed:** 37
-* **Failed:** 1 *(Edge-case: Mongoose schema required totalCopies on partial book update)*
-
-### Concurrency Stress Test Results:
-* **Scenario:** Two simultaneous issue requests (`POST /api/borrow`) dispatched concurrently against a book with exactly `availableCopies: 1`.
-* **Result:**
-  * Request 1 received HTTP `201 Created` with a new `BorrowRecord`.
-  * Request 2 received HTTP `409 Conflict` (`Book not found or no copies are available`).
-  * Final inventory verified: `availableCopies: 0`. Negative inventory was completely prevented.
-
----
-*End of ShelfLife IA-II Examination & Project Documentation*
+*End of IA-II Solutions & System Design Document*
