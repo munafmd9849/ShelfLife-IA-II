@@ -1,0 +1,8 @@
+import { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { api } from '../api/client';
+import DataTable, { type Column } from '../components/DataTable';
+import type { BorrowRecord, Member } from '../types';
+const date = (value?: string | null) => value ? new Date(value).toLocaleDateString() : '—';
+const columns: Column<BorrowRecord>[] = [{ header: 'Book', cell: (record) => <><strong>{record.book?.title || 'Deleted book'}</strong><small>{record.book?.author}</small></> }, { header: 'Issued', cell: (record) => date(record.issueDate) }, { header: 'Due', cell: (record) => date(record.dueDate) }, { header: 'Returned', cell: (record) => date(record.returnDate) }, { header: 'Status', cell: (record) => <span className={`status ${record.status}`}>{record.status}</span> }];
+export default function MemberHistory() { const { id } = useParams(); const [member, setMember] = useState<Member>(); const [history, setHistory] = useState<BorrowRecord[]>([]); const [error, setError] = useState(''); useEffect(() => { if (id) api.getMemberHistory(id).then(({ data }) => { setMember(data.data.member); setHistory(data.data.history); }).catch((e) => setError(e.response?.data?.message || 'Could not load member history.')); }, [id]); if (error) return <div className="notice error">{error}</div>; if (!member) return <p className="loading">Loading member history…</p>; return <><Link to="/books">← Back to books</Link><section className="page-title"><div><h1>{member.name}</h1><p>{member.membershipId} · {member.email}</p></div></section><DataTable columns={columns} rows={history} emptyMessage="No borrowing history for this member." /></>; }
